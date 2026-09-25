@@ -1,0 +1,747 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Birthday Surprise</title>
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      user-select: none;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    body {
+      background: radial-gradient(circle at center, #2e1022 0%, #150610 100%);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      min-height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      overflow-x: hidden;
+      color: #ffffff;
+      position: relative;
+      padding: 16px 0;
+    }
+
+    .heart-bg {
+      position: fixed;
+      bottom: -40px;
+      color: rgba(255, 120, 160, 0.45);
+      animation: floatUp linear infinite;
+      z-index: 1;
+      pointer-events: none;
+    }
+
+    @keyframes floatUp {
+      0% { transform: translateY(0) scale(0.6); opacity: 0.8; }
+      100% { transform: translateY(-115vh) scale(1.2); opacity: 0; }
+    }
+
+    .container {
+      position: relative;
+      z-index: 2;
+      width: 100%;
+      max-width: 440px;
+      min-height: 640px;
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .view {
+      display: none;
+      width: 100%;
+      flex-direction: column;
+      align-items: center;
+      text-align: center;
+      animation: fadeIn 0.4s ease-out forwards;
+    }
+
+    .view.active {
+      display: flex !important;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(8px) scale(0.98); }
+      to { opacity: 1; transform: translateY(0) scale(1); }
+    }
+
+    .btn-gradient {
+      border: none;
+      background: linear-gradient(135deg, #ff4e7e 0%, #ff839d 100%);
+      color: #ffffff;
+      font-weight: 600;
+      font-size: 14px;
+      padding: 12px 28px;
+      border-radius: 30px;
+      cursor: pointer;
+      box-shadow: 0 4px 14px rgba(255, 78, 126, 0.4);
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      margin-top: 15px;
+    }
+    .btn-gradient:active { transform: scale(0.96); }
+
+    /* SCREEN 1 */
+    .gift-title { font-size: 24px; font-weight: 700; margin-bottom: 6px; }
+    .gift-subtitle { font-size: 13px; color: #ff9bbb; margin-bottom: 40px; }
+    .gift-box-wrapper {
+      position: relative; cursor: pointer; width: 170px; height: 170px;
+      display: flex; justify-content: center; align-items: center;
+    }
+    .gift-glow {
+      position: absolute; width: 190px; height: 190px;
+      background: radial-gradient(circle, rgba(255, 190, 70, 0.4) 0%, transparent 70%);
+      filter: blur(10px); animation: pulse 2s infinite alternate;
+    }
+    @keyframes pulse { 0% { transform: scale(0.9); opacity: 0.5; } 100% { transform: scale(1.2); opacity: 1; } }
+    .gift-box { font-size: 96px; position: relative; z-index: 2; filter: drop-shadow(0 10px 20px rgba(0,0,0,0.5)); }
+    .tap-hint { margin-top: 36px; font-size: 13px; color: #f7d1dd; opacity: 0.85; }
+
+    /* SCREEN 2 */
+    .time-display { font-size: 46px; font-weight: 600; line-height: 1; }
+    .status-tag {
+      margin-top: 8px; display: inline-flex; align-items: center; gap: 6px;
+      background: rgba(255, 255, 255, 0.08); border: 1px solid rgba(255, 255, 255, 0.12);
+      padding: 4px 12px; border-radius: 20px; font-size: 11px; color: #ffb4cc;
+    }
+    .lock-icon { font-size: 22px; margin-top: 24px; margin-bottom: 8px; color: #ffd080; }
+    .passcode-prompt { font-size: 13px; color: #f3cfdc; margin-bottom: 6px; }
+    .hint-label { font-size: 11px; color: #ffa1bd; margin-bottom: 20px; display: flex; align-items: center; gap: 4px; }
+    .passcode-dots { display: flex; gap: 14px; margin-bottom: 24px; }
+    .dot {
+      width: 12px; height: 12px; border-radius: 50%;
+      border: 1.5px solid rgba(255, 255, 255, 0.5); background: transparent; transition: all 0.2s ease;
+    }
+    .dot.filled { background: #ffffff; border-color: #ffffff; box-shadow: 0 0 8px #ffffff; }
+    .shake { animation: shake 0.35s ease-in-out; }
+    @keyframes shake { 0%, 100% { transform: translateX(0); } 20%, 60% { transform: translateX(-8px); } 40%, 80% { transform: translateX(8px); } }
+    .keypad { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px 18px; width: 100%; max-width: 250px; }
+    .key-btn {
+      width: 62px; height: 62px; border-radius: 50%; border: none;
+      background: rgba(255, 255, 255, 0.12); backdrop-filter: blur(8px);
+      color: #ffffff; font-size: 22px; font-weight: 500;
+      display: flex; align-items: center; justify-content: center; cursor: pointer; margin: 0 auto;
+    }
+    .key-btn:active { background: rgba(255, 255, 255, 0.3); transform: scale(0.92); }
+    .key-btn.empty { background: transparent; cursor: default; }
+
+    /* SCREEN 3 */
+    .memories-title { font-size: 24px; font-weight: 700; margin-bottom: 20px; }
+    .polaroid-frame {
+      background: #ffffff; color: #2b2b2b; padding: 12px 12px 18px 12px;
+      border-radius: 4px; box-shadow: 0 10px 25px rgba(0, 0, 0, 0.45);
+      width: 260px; display: flex; flex-direction: column; align-items: center; cursor: pointer;
+    }
+    .polaroid-img { width: 100%; height: 250px; object-fit: cover; border-radius: 2px; background: #f0f0f0; display: none; }
+    .polaroid-img.active { display: block; }
+    .polaroid-caption { margin-top: 14px; font-size: 13px; font-family: 'Comic Sans MS', cursive, sans-serif; text-align: center; }
+    .slider-hint { margin-top: 14px; font-size: 12px; color: #ffb4cc; }
+    .slider-dots { display: flex; gap: 6px; margin-top: 10px; margin-bottom: 24px; }
+    .s-dot { width: 7px; height: 7px; border-radius: 50%; background: rgba(255, 255, 255, 0.3); transition: 0.3s; }
+    .s-dot.active { background: #ff5277; width: 18px; border-radius: 10px; }
+
+    /* SCREEN 4 */
+    .wishes-title { font-size: 24px; font-weight: 700; margin-bottom: 6px; }
+    .wishes-sub { font-size: 12px; color: #ff9bbb; margin-bottom: 20px; }
+    .balloons-wrapper { display: flex; flex-direction: column; gap: 22px; align-items: center; margin-bottom: 26px; width: 100%; }
+    .balloons-row { display: flex; justify-content: center; gap: 24px; width: 100%; }
+    .balloon-item {
+      position: relative; cursor: pointer; display: flex; align-items: center; justify-content: center;
+      animation: gentleFloat 2.8s ease-in-out infinite alternate;
+    }
+    .balloon-item::after {
+      content: ''; position: absolute; bottom: -20px; left: 50%; transform: translateX(-50%);
+      width: 2px; height: 20px; background: linear-gradient(to bottom, #d4af37, #f7e08b, #aa820a);
+    }
+    .ribbon-bow { position: absolute; top: -12px; font-size: 22px; z-index: 4; pointer-events: none; }
+    .b-burgundy-foil {
+      width: 82px; height: 82px; border-radius: 50%;
+      background: radial-gradient(circle at 35% 35%, #e2557c, #8c113b 50%, #460419 90%);
+      box-shadow: inset 0 0 10px rgba(255, 255, 255, 0.4), 0 10px 24px rgba(70, 4, 25, 0.7);
+      border: 1.5px solid rgba(212, 175, 55, 0.4);
+    }
+    .b-burgundy-foil .foil-text {
+      font-size: 10px; font-weight: 700; color: #ffe082; text-shadow: 0 1px 2px rgba(0,0,0,0.6);
+      text-align: center; line-height: 1.1; font-family: 'Georgia', serif;
+    }
+    .b-metallic-rosegold {
+      width: 72px; height: 86px; border-radius: 50% 50% 50% 50% / 40% 40% 60% 60%;
+      background: radial-gradient(circle at 30% 25%, #fff0f5 0%, #f4a6b8 30%, #b85d75 70%, #5e2333 100%);
+      box-shadow: inset -4px -4px 10px rgba(0,0,0,0.3), 0 10px 22px rgba(184, 93, 117, 0.45);
+    }
+    .b-confetti {
+      width: 72px; height: 86px; border-radius: 50% 50% 50% 50% / 40% 40% 60% 60%;
+      background: radial-gradient(circle at 35% 30%, rgba(255, 255, 255, 0.8) 0%, rgba(255, 215, 230, 0.45) 45%, rgba(240, 150, 180, 0.3) 80%);
+      box-shadow: inset 0 0 12px rgba(255, 255, 255, 0.6), 0 10px 20px rgba(240, 150, 180, 0.35);
+      border: 1px solid rgba(255, 255, 255, 0.5);
+    }
+    .b-confetti .glitter { font-size: 13px; }
+    @keyframes gentleFloat { 0% { transform: translateY(0px); } 100% { transform: translateY(-8px); } }
+    .balloon-item.popped { visibility: hidden; pointer-events: none; }
+    .wish-message-box {
+      min-height: 52px; max-width: 320px; width: 100%;
+      background: rgba(255, 255, 255, 0.08); border: 1px solid rgba(255, 255, 255, 0.15);
+      border-radius: 14px; padding: 12px 18px; font-size: 14px; margin-bottom: 16px;
+      display: flex; align-items: center; justify-content: center; color: #ffe6ef;
+    }
+    .pop-counter { background: rgba(255, 255, 255, 0.1); border-radius: 20px; padding: 6px 14px; font-size: 12px; margin-bottom: 20px; }
+
+    /* SCREEN 5: ANY-PIECE SWAP 3x3 PUZZLE */
+    .puzzle-header { display: flex; align-items: center; justify-content: space-between; width: 250px; margin-bottom: 14px; }
+    .stat-badge { background: rgba(255, 255, 255, 0.1); border-radius: 12px; padding: 4px 12px; font-size: 12px; }
+    .preview-box { width: 44px; height: 44px; border-radius: 8px; border: 1.5px solid #ff7b99; object-fit: cover; }
+    .puzzle-grid {
+      display: grid; grid-template-columns: repeat(3, 80px); grid-template-rows: repeat(3, 80px);
+      gap: 5px; background: rgba(0, 0, 0, 0.35); padding: 8px; border-radius: 14px;
+      border: 1.5px solid rgba(255, 255, 255, 0.15); margin-bottom: 18px;
+    }
+    .p-tile {
+      width: 80px; height: 80px; border-radius: 6px; cursor: pointer;
+      background-size: 240px 240px; background-repeat: no-repeat;
+      transition: transform 0.15s ease, box-shadow 0.15s ease;
+      border: 2px solid transparent;
+    }
+    .p-tile.selected {
+      transform: scale(0.95);
+      border-color: #ffd166;
+      box-shadow: 0 0 12px #ffd166;
+    }
+    .puzzle-actions { display: flex; gap: 12px; }
+    .btn-secondary {
+      border: none; background: rgba(255, 255, 255, 0.14); color: #fff;
+      font-size: 12px; font-weight: 500; padding: 8px 16px; border-radius: 20px; cursor: pointer;
+    }
+
+    /* SCREEN 6: SCRATCH CARD */
+    .scratch-wrapper {
+      position: relative; width: 280px; height: 180px; border-radius: 16px;
+      overflow: hidden; box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5);
+      margin: 15px 0; border: 2px solid rgba(255, 215, 0, 0.3);
+    }
+    .scratch-content {
+      position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+      background: radial-gradient(circle, #521835 0%, #200516 100%);
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      padding: 10px; text-align: center;
+    }
+    .scratch-content img { width: 65px; height: 65px; border-radius: 50%; object-fit: cover; margin-bottom: 6px; border: 2px solid #ffd166; }
+    .scratch-content h3 { font-size: 16px; color: #ffd166; margin-bottom: 4px; }
+    .scratch-content p { font-size: 11px; color: #ffb3c6; }
+    #scratchCanvas { position: absolute; top: 0; left: 0; z-index: 2; cursor: pointer; touch-action: none; }
+    
+    .timer-alert {
+      font-size: 13px;
+      color: #ffd166;
+      margin-top: 10px;
+      font-weight: 600;
+      min-height: 20px;
+    }
+
+    /* SCREEN 7: LETTER */
+    .letter-card {
+      background: rgba(30, 8, 24, 0.96);
+      border: 1.5px solid rgba(255, 140, 175, 0.4);
+      border-radius: 20px;
+      padding: 24px 20px;
+      max-width: 380px;
+      width: 100%;
+      text-align: left;
+      box-shadow: 0 15px 35px rgba(0, 0, 0, 0.7);
+      max-height: 480px;
+      overflow-y: auto;
+      margin-top: 10px;
+      scroll-behavior: smooth;
+    }
+    .letter-title {
+      font-size: 20px;
+      font-weight: 700;
+      color: #ff7597;
+      margin-bottom: 14px;
+      font-family: 'Georgia', serif;
+    }
+    .letter-line {
+      font-size: 13.5px;
+      line-height: 1.7;
+      color: #fce4ec;
+      margin-bottom: 12px;
+      opacity: 0;
+      transform: translateY(10px);
+      transition: opacity 0.6s ease, transform 0.6s ease;
+      display: block;
+    }
+    .letter-line.show {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  </style>
+</head>
+<body>
+
+  <div id="heartsContainer"></div>
+
+  <div class="container">
+
+    <!-- VIEW 1: Gift Screen[span_3](start_span)[span_3](end_span) -->
+    <div id="view1" class="view active">
+      <h1 class="gift-title">A surprise awaits you... 🌟</h1>
+      <p class="gift-subtitle">✨ Something special, just for you ✨</p>
+
+      <div class="gift-box-wrapper" onclick="goToScreen(2)">
+        <div class="gift-glow"></div>
+        <div class="gift-box">🎁</div>
+      </div>
+
+      <p class="tap-hint">Tap the gift to open ✨</p>
+    </div>
+
+    <!-- VIEW 2: Passcode Screen[span_4](start_span)[span_4](end_span) -->
+    <div id="view2" class="view">
+      <div class="time-display" id="clock">13:41</div>
+      <div class="status-tag"><span>Birthday Surprise</span> 💖</div>
+
+      <div class="lock-icon">🔒</div>
+      <p class="passcode-prompt">Enter the secret code 🔐</p>
+      <span class="hint-label">💡 1204</span>
+
+      <div class="passcode-dots" id="passcodeDots">
+        <div class="dot"></div>
+        <div class="dot"></div>
+        <div class="dot"></div>
+        <div class="dot"></div>
+      </div>
+
+      <div class="keypad">
+        <button class="key-btn" onclick="pressKey('1')">1</button>
+        <button class="key-btn" onclick="pressKey('2')">2</button>
+        <button class="key-btn" onclick="pressKey('3')">3</button>
+        <button class="key-btn" onclick="pressKey('4')">4</button>
+        <button class="key-btn" onclick="pressKey('5')">5</button>
+        <button class="key-btn" onclick="pressKey('6')">6</button>
+        <button class="key-btn" onclick="pressKey('7')">7</button>
+        <button class="key-btn" onclick="pressKey('8')">8</button>
+        <button class="key-btn" onclick="pressKey('9')">9</button>
+        <button class="key-btn empty"></button>
+        <button class="key-btn" onclick="pressKey('0')">0</button>
+        <button class="key-btn" onclick="deleteKey()">⌫</button>
+      </div>
+    </div>
+
+    <!-- VIEW 3: Cute Memories[span_5](start_span)[span_5](end_span) -->
+    <div id="view3" class="view">
+      <h2 class="memories-title">Cute Memories 💖</h2>
+
+      <div class="polaroid-frame" onclick="nextPhoto()">
+        <img id="img0" class="polaroid-img active" src="A.jpg" alt="Photo 1" data-caption="Cheers for that beautiful smile of yours 💕">
+        <img id="img1" class="polaroid-img" src="B.jpg" alt="Photo 2" data-caption="Happy Birthday in advance ✨🎂">
+        <img id="img2" class="polaroid-img" src="C.jpg" alt="Photo 3" data-caption="I'll always hold this hand and never let go 💖">
+        <img id="img3" class="polaroid-img" src="D.jpg" alt="Photo 4" data-caption="To the most special person in my life 🌸">
+        
+        <p id="polaroidCaption" class="polaroid-caption">Cheers for that beautiful smile of yours 💕</p>
+      </div>
+
+      <p class="slider-hint">~ tap the photo to change ~</p>
+
+      <div class="slider-dots" id="dotsContainer">
+        <div class="s-dot active"></div>
+        <div class="s-dot"></div>
+        <div class="s-dot"></div>
+        <div class="s-dot"></div>
+      </div>
+
+      <button class="btn-gradient" onclick="goToScreen(4)">Next Surprise 🎁</button>
+    </div>
+
+    <!-- VIEW 4: Balloons[span_6](start_span)[span_6](end_span)[span_7](start_span)[span_7](end_span) -->
+    <div id="view4" class="view">
+      <h2 class="wishes-title">Pop the Wishes 🎈</h2>
+      <p class="wishes-sub">Tap each balloon to reveal a little wish ✨</p>
+
+      <div class="balloons-wrapper">
+        <div class="balloons-row">
+          <div class="balloon-item b-metallic-rosegold" onclick="popBalloon(0, this)"><span class="ribbon-bow">🎀</span></div>
+          <div class="balloon-item b-confetti" onclick="popBalloon(1, this)"><span class="ribbon-bow">🎀</span><span class="glitter">🌸✨</span></div>
+        </div>
+        <div class="balloons-row">
+          <div class="balloon-item b-metallic-rosegold" onclick="popBalloon(2, this)"><span class="ribbon-bow">🎀</span></div>
+          <div class="balloon-item b-burgundy-foil" onclick="popBalloon(3, this)"><span class="ribbon-bow">🎀</span><div class="foil-text">HAPPY<br>Birthday</div></div>
+          <div class="balloon-item b-confetti" onclick="popBalloon(4, this)"><span class="ribbon-bow">🎀</span><span class="glitter">✨💖</span></div>
+        </div>
+      </div>
+
+      <div class="wish-message-box" id="wishText">Tap a balloon above! ✨</div>
+      <div class="pop-counter" id="popCounter">Popped 0/5</div>
+
+      <button class="btn-gradient" id="continueBtn" style="display:none;" onclick="goToScreen(5)">
+        Continue 💖
+      </button>
+    </div>
+
+    <!-- VIEW 5: FREE-SWAP 3x3 PUZZLE[span_8](start_span)[span_8](end_span) -->
+    <div id="view5" class="view">
+      <h2 class="wishes-title">Birthday Puzzle 🧩</h2>
+      <p class="wishes-sub">Tap one piece, then tap another to swap them ✨</p>
+
+      <div class="puzzle-header">
+        <div class="stat-badge"><span id="movesCount">0</span> SWAPS</div>
+        <img id="puzzlePreview" src="https://images.unsplash.com/photo-1546182990-dffeafbe841d?w=200&auto=format&fit=crop" class="preview-box" alt="Picture">
+      </div>
+
+      <div class="puzzle-grid" id="puzzleGrid"></div>
+
+      <div class="puzzle-actions" id="puzzleActions">
+        <button class="btn-secondary" onclick="shufflePuzzle()">🔀 Mix Again</button>
+        <button class="btn-secondary" onclick="solvePuzzle()">✨ Solve it for me</button>
+      </div>
+
+      <button class="btn-gradient" id="puzzleNextBtn" style="display:none;" onclick="goToScreen(6)">
+        One Last Surprise ✨
+      </button>
+    </div>
+
+    <!-- VIEW 6: SCRATCH CARD[span_9](start_span)[span_9](end_span) -->
+    <div id="view6" class="view">
+      <h2 class="wishes-title">One Last Surprise ✨</h2>
+      <p class="wishes-sub">Scratch the golden card below 💖</p>
+
+      <div class="scratch-wrapper">
+        <div class="scratch-content">
+          <img id="scratchImg" src="P.jpg" alt="Surprise">
+          <h3>Happy Birthday! 🎉</h3>
+          <p>Opening your letter in a moment...</p>
+        </div>
+        <canvas id="scratchCanvas" width="280" height="180"></canvas>
+      </div>
+
+      <div class="timer-alert" id="timerAlert"></div>
+
+      <button class="btn-gradient" onclick="goToScreen(7)">
+        Open Letter Now 💌
+      </button>
+    </div>
+
+    <!-- VIEW 7: LINE-TO-LINE LETTER[span_10](start_span)[span_10](end_span)[span_11](start_span)[span_11](end_span) -->
+    <div id="view7" class="view">
+      <h2 class="wishes-title" style="margin-bottom: 12px;">A Letter Just For You 💌</h2>
+
+      <div class="letter-card" id="letterCard">
+        <div class="letter-title">My dearest,</div>
+        
+        <div id="linesContainer">
+          <span class="letter-line">On this very special day, I want you to know how deeply you are loved. Every single moment I spend with you feels like a beautiful dream I never want to wake up from.</span>
+          <span class="letter-line">You make every ordinary day feel extraordinary. Your smile is my favourite thing in the entire world, and your laugh — oh, your laugh — is the most beautiful sound I have ever heard.</span>
+          <span class="letter-line">Thank you for being you. Thank you for choosing me every single day. I promise to always be there, to hold your hand through every storm, and to celebrate every little joy with you.</span>
+          <span class="letter-line">Happy Birthday my love. You deserve every good thing the universe has to offer. Today and always. 💖</span>
+          <span class="letter-line" style="font-weight: 600; color: #ff85a1;">Forever yours, with all my heart ❤️</span>
+        </div>
+      </div>
+
+      <!-- Instant 100% Guaranteed Watch Again Replay[span_12](start_span)[span_12](end_span)[span_13](start_span)[span_13](end_span) -->
+      <button class="btn-secondary" style="margin-top: 18px;" onclick="window.location.reload()">
+        🌸 Watch it again
+      </button>
+    </div>
+
+  </div>
+
+  <script>
+    function goToScreen(screenNumber) {
+      document.querySelectorAll('.view').forEach(view => {
+        view.classList.remove('active');
+      });
+      const target = document.getElementById('view' + screenNumber);
+      if (target) target.classList.add('active');
+
+      if (screenNumber === 2) {
+        enteredCode = "";
+        renderDots();
+      } else if (screenNumber === 5) {
+        initPuzzle();
+      } else if (screenNumber === 6) {
+        initScratchCard();
+      } else if (screenNumber === 7) {
+        startLineByLineDisplay();
+      }
+    }
+
+    // Passcode Logic[span_14](start_span)[span_14](end_span)
+    const SECRET_CODE = "1204";
+    let enteredCode = "";
+
+    function pressKey(num) {
+      if (enteredCode.length < 4) {
+        enteredCode += num;
+        renderDots();
+        if (enteredCode.length === 4) setTimeout(verifyCode, 200);
+      }
+    }
+
+    function deleteKey() {
+      if (enteredCode.length > 0) {
+        enteredCode = enteredCode.slice(0, -1);
+        renderDots();
+      }
+    }
+
+    function renderDots() {
+      const dots = document.querySelectorAll('#passcodeDots .dot');
+      dots.forEach((dot, index) => {
+        dot.classList.toggle('filled', index < enteredCode.length);
+      });
+    }
+
+    function verifyCode() {
+      const dotsContainer = document.getElementById('passcodeDots');
+      if (enteredCode === SECRET_CODE) {
+        goToScreen(3);
+      } else {
+        dotsContainer.classList.add('shake');
+        setTimeout(() => {
+          dotsContainer.classList.remove('shake');
+          enteredCode = "";
+          renderDots();
+        }, 400);
+      }
+    }
+
+    // Memories photo slider[span_15](start_span)[span_15](end_span)
+    let currentPhoto = 0;
+    const totalPhotos = 4;
+
+    function nextPhoto() {
+      document.getElementById(`img${currentPhoto}`).classList.remove('active');
+      currentPhoto = (currentPhoto + 1) % totalPhotos;
+      const newImg = document.getElementById(`img${currentPhoto}`);
+      newImg.classList.add('active');
+      document.getElementById("polaroidCaption").textContent = newImg.getAttribute('data-caption');
+
+      const dots = document.querySelectorAll('#dotsContainer .s-dot');
+      dots.forEach((dot, i) => dot.classList.toggle('active', i === currentPhoto));
+    }
+
+    // Balloons logic[span_16](start_span)[span_16](end_span)[span_17](start_span)[span_17](end_span)
+    const wishes = [
+      "You make my whole world brighter 🌟",
+      "You are my favourite person, always 💖",
+      "Always stay as sweet as you are 🍰",
+      "Here is to so many more years together ✨",
+      "I am the luckiest, because of you 🌸"
+    ];
+    let poppedCount = 0;
+
+    function popBalloon(index, el) {
+      if (!el.classList.contains('popped')) {
+        el.classList.add('popped');
+        poppedCount++;
+        document.getElementById("wishText").textContent = wishes[index];
+        document.getElementById("popCounter").textContent = `Popped ${poppedCount}/5`;
+
+        if (poppedCount === 5) {
+          document.getElementById("continueBtn").style.display = "inline-flex";
+        }
+      }
+    }
+
+    // Free Swap 3x3 Puzzle[span_18](start_span)[span_18](end_span)
+    const puzzleImg = "P.jpg";
+
+    let board = [0, 1, 2, 3, 4, 5, 6, 7, 8];
+    let moves = 0;
+    let selectedTileIndex = null;
+
+    function initPuzzle() {
+      moves = 0;
+      selectedTileIndex = null;
+      document.getElementById("movesCount").textContent = moves;
+      document.getElementById("puzzleNextBtn").style.display = "none";
+      document.getElementById("puzzleActions").style.display = "flex";
+      
+      const preview = document.getElementById("puzzlePreview");
+      if (preview) preview.src = puzzleImg;
+
+      shufflePuzzle();
+    }
+
+    function renderPuzzle() {
+      const grid = document.getElementById("puzzleGrid");
+      grid.innerHTML = "";
+      board.forEach((pos, idx) => {
+        const tile = document.createElement("div");
+        tile.className = "p-tile";
+        if (selectedTileIndex === idx) {
+          tile.classList.add("selected");
+        }
+
+        const r = Math.floor(pos / 3);
+        const c = pos % 3;
+        tile.style.backgroundImage = `url('${puzzleImg}')`;
+        tile.style.backgroundPosition = `-${c * 80}px -${r * 80}px`;
+        
+        tile.onclick = () => handleTileClick(idx);
+        grid.appendChild(tile);
+      });
+    }
+
+    function handleTileClick(idx) {
+      if (selectedTileIndex === null) {
+        selectedTileIndex = idx;
+        renderPuzzle();
+      } else if (selectedTileIndex === idx) {
+        selectedTileIndex = null;
+        renderPuzzle();
+      } else {
+        [board[selectedTileIndex], board[idx]] = [board[idx], board[selectedTileIndex]];
+        moves++;
+        document.getElementById("movesCount").textContent = moves;
+        selectedTileIndex = null;
+        renderPuzzle();
+        checkPuzzleWin();
+      }
+    }
+
+    function shufflePuzzle() {
+      selectedTileIndex = null;
+      for (let i = board.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [board[i], board[j]] = [board[j], board[i]];
+      }
+      if (board.every((val, i) => val === i)) {
+        [board[0], board[1]] = [board[1], board[0]];
+      }
+      moves = 0;
+      document.getElementById("movesCount").textContent = moves;
+      renderPuzzle();
+    }
+
+    function solvePuzzle() {
+      selectedTileIndex = null;
+      board = [0, 1, 2, 3, 4, 5, 6, 7, 8];
+      renderPuzzle();
+      checkPuzzleWin();
+    }
+
+    function checkPuzzleWin() {
+      const isWon = board.every((val, i) => val === i);
+      if (isWon) {
+        document.getElementById("puzzleActions").style.display = "none";
+        document.getElementById("puzzleNextBtn").style.display = "inline-flex";
+      }
+    }
+
+    // Scratch Card with 5s Countdown[span_19](start_span)[span_19](end_span)[span_20](start_span)[span_20](end_span)
+    let autoTimerStarted = false;
+    let countdownTimer = null;
+
+    function initScratchCard() {
+      const canvas = document.getElementById("scratchCanvas");
+      const ctx = canvas.getContext("2d");
+      const alertBox = document.getElementById("timerAlert");
+      alertBox.textContent = "";
+      autoTimerStarted = false;
+      clearInterval(countdownTimer);
+
+      canvas.style.display = "block";
+      canvas.style.opacity = "1";
+
+      const grad = ctx.createLinearGradient(0, 0, 280, 180);
+      grad.addColorStop(0, '#f9d423');
+      grad.addColorStop(0.5, '#ff4e50');
+      grad.addColorStop(1, '#f9d423');
+      ctx.fillStyle = grad;
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+      ctx.font = "bold 15px sans-serif";
+      ctx.fillStyle = "#ffffff";
+      ctx.textAlign = "center";
+      ctx.fillText("✨ Scratch here ✨", 140, 95);
+
+      let isDrawing = false;
+
+      function scratch(e) {
+        if (!isDrawing) return;
+        const rect = canvas.getBoundingClientRect();
+        const x = (e.clientX || (e.touches && e.touches[0].clientX)) - rect.left;
+        const y = (e.clientY || (e.touches && e.touches[0].clientY)) - rect.top;
+
+        ctx.globalCompositeOperation = 'destination-out';
+        ctx.beginPath();
+        ctx.arc(x, y, 22, 0, Math.PI * 2);
+        ctx.fill();
+
+        if (!autoTimerStarted) {
+          autoTimerStarted = true;
+          start5SecCountdown();
+        }
+      }
+
+      canvas.onmousedown = () => isDrawing = true;
+      window.onmouseup = () => isDrawing = false;
+      canvas.onmousemove = scratch;
+
+      canvas.ontouchstart = () => isDrawing = true;
+      window.ontouchend = () => isDrawing = false;
+      canvas.ontouchmove = scratch;
+    }
+
+    function start5SecCountdown() {
+      let secondsLeft = 5;
+      const alertBox = document.getElementById("timerAlert");
+      alertBox.textContent = `Opening Letter in ${secondsLeft}s... 💌`;
+
+      countdownTimer = setInterval(() => {
+        secondsLeft--;
+        if (secondsLeft > 0) {
+          alertBox.textContent = `Opening Letter in ${secondsLeft}s... 💌`;
+        } else {
+          clearInterval(countdownTimer);
+          goToScreen(7);
+        }
+      }, 1000);
+    }
+
+    // Line-to-line Letter Display[span_21](start_span)[span_21](end_span)
+    let lineTimers = [];
+
+    function startLineByLineDisplay() {
+      const lines = document.querySelectorAll('#linesContainer .letter-line');
+      const letterCard = document.getElementById("letterCard");
+      
+      lineTimers.forEach(t => clearTimeout(t));
+      lineTimers = [];
+
+      lines.forEach(line => line.classList.remove('show'));
+
+      lines.forEach((line, index) => {
+        const timer = setTimeout(() => {
+          line.classList.add('show');
+          letterCard.scrollTo({
+            top: letterCard.scrollHeight,
+            behavior: 'smooth'
+          });
+        }, index * 1200);
+        lineTimers.push(timer);
+      });
+    }
+
+    // Floating hearts animation
+    function createHeart() {
+      const heart = document.createElement('div');
+      heart.classList.add('heart-bg');
+      heart.innerHTML = Math.random() > 0.4 ? '♥' : '✨';
+      heart.style.left = Math.random() * 100 + 'vw';
+      heart.style.fontSize = Math.floor(Math.random() * 14 + 14) + 'px';
+      heart.style.animationDuration = Math.random() * 4 + 4 + 's';
+      document.getElementById('heartsContainer').appendChild(heart);
+      setTimeout(() => heart.remove(), 7000);
+    }
+    setInterval(createHeart, 350);
+  </script>
+</body>
+</html>
